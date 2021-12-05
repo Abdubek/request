@@ -2,6 +2,7 @@ import type { MetaFunction, LoaderFunction, ActionFunction } from "remix";
 import { useLoaderData, json, Form } from "remix";
 import { db } from "~/utils/db.server";
 import { createRequestDoc, Request } from "~/domain/request";
+import { sendToStorage } from "../domain/request";
 
 type IndexData = {};
 
@@ -41,6 +42,7 @@ export const action: ActionFunction = async ({ request }): Promise<Response | Ac
   const newRequest = await db.request.create({ data: fields });
 
   createRequestDoc(newRequest);
+  await sendToStorage(newRequest);
 
   return {
     fields,

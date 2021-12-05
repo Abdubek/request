@@ -1,5 +1,6 @@
 import { Document, Paragraph, TextRun, Packer, AlignmentType } from "docx";
 import fs from 'fs'
+import { Storage } from '@google-cloud/storage';
 
 export type Request = {
   id?: string,
@@ -143,6 +144,25 @@ export const createRequestDoc = (request: Request) => {
   });
 }
 
-export const sendDocumentToMail = async (request: Request) => {
+export const sendToStorage = async (request: Request) => {
+  const storage = new Storage({
+    projectId: process.env.PROJECT_ID,
+    credentials: {
+      client_email: process.env.CLIENT_EMAIL,
+      private_key: process.env.PRIVATE_KEY,
+    },
+  });
 
+  const bucket = storage.bucket(process.env.BUCKET_NAME || 'request-storage');
+  const docFile = fs.readFileSync(`document-${request.id}.docx`, "utf8");
+
+
+  const file = bucket.file(docFile);
+  const options = {
+    expires: Date.now() + 365 * 24 * 60 * 60 * 1000, //  1 minute,
+    fields: { 'x-goog-meta-test': 'data' },
+  };
+
+  const [response] = await file.generateSignedPostPolicyV4(options);
+  console.log(response)
 }
